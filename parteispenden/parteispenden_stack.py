@@ -10,6 +10,7 @@ from aws_cdk.aws_events import Rule, Schedule
 from aws_cdk.aws_events_targets import LambdaFunction
 from aws_cdk.aws_lambda import Runtime
 from aws_cdk.aws_lambda_python_alpha import PythonFunction
+from aws_cdk.aws_secretsmanager import Secret
 from aws_cdk.aws_sns import Topic
 from aws_cdk.aws_sns_subscriptions import EmailSubscription
 from constructs import Construct
@@ -21,14 +22,21 @@ class ParteispendenStack(Stack):
         super().__init__(scope, construct_id, **kwargs)
 
         was_ist_schon_getan = Table(self, 'was_ist_schon_getan', partition_key={'name': 'id', 'type': AttributeType.STRING})
+        # Das Secret aus der ARN importieren
+        secret = Secret(self, 'bluesky-login')
+
         bundestag_scrapen = PythonFunction(
             self, 'bundestag_scrapen',
             entry='bundestag_scrapen',
             runtime=Runtime.PYTHON_3_12,
+            timeout=Duration.seconds(30),
             environment={
-                'WAS_IST_GETAN_TABELLE': was_ist_schon_getan.table_name
+                'WAS_IST_GETAN_TABELLE': was_ist_schon_getan.table_name,
+                "BSKY_LOGIN": secret.secret_arn
             }
         )
+        secret.grant_read(bundestag_scrapen)
+
         was_ist_schon_getan.grant_read_write_data(bundestag_scrapen)
 
         event_rule = Rule(
