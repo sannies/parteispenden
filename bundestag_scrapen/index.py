@@ -9,7 +9,7 @@ import requests
 from bs4 import BeautifulSoup
 
 # URL der Webseite mit der Tabelle
-url = 'https://www.bundestag.de/parlament/praesidium/parteienfinanzierung/fundstellen50000/2024/2024-inhalt-984862'
+url = 'https://www.bundestag.de/parlament/praesidium/parteienfinanzierung/fundstellen50000/2025/2025-inhalt-1032412'
 
 pds_url = 'https://bsky.social'
 
@@ -32,13 +32,13 @@ def get_user_password():
 
 
 def handler(event, context):
-    print("Parteispenden2024-Handler wurde aufgerufen.")
+    print("Parteispenden2025-Handler wurde aufgerufen.")
     rows = hole_spenden()
     print(f"{len(rows)} Spenden gefunden.")
     dynamodb = boto3.resource("dynamodb")
     was_ist_getan = dynamodb.Table(os.environ.get("WAS_IST_GETAN_TABELLE"))
-    was_ist_getan.get_item(Key={"id": "parteispenden2024"})
-    res = was_ist_getan.get_item(Key={"id": "parteispenden2024"})
+    was_ist_getan.get_item(Key={"id": "parteispenden2025"})
+    res = was_ist_getan.get_item(Key={"id": "parteispenden2025"})
     if "Item" in res:
         counter = int(res["Item"]["counter"])
     else:
@@ -67,8 +67,8 @@ def auf_bsky_posten(row):
     now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     post = {
         "$type": "app.bsky.feed.post",
-        "text": 'Parteispende von {} an die {} in Höhe von {} am {}'.format(
-                    row['Donor'], row['Party'], row['Amount'], row['Date Received'].strftime('%d.%m.%Y')
+        "text": 'Parteispende von \n{}\n an die {} in Höhe von {} am {}'.format(
+                    row['Donor'].replace("<br>", "\n"), row['Party'], row['Amount'], row['Date Received'].strftime('%d.%m.%Y')
                 ),
         "createdAt": now,
     }
